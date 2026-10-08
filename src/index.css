@@ -1,0 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap');
+:root { font-family: 'DM Sans', sans-serif; color: #172326; background: #f7f8f5; font-synthesis: none; text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased; --ink: #172326; --muted: #687477; --line: #dfe5e0; --paper: #f7f8f5; --card: #fff; --mint: #45d6ad; --navy: #172326; --cream: #edf2ec; --display: 'Fraunces', serif; --mono: 'DM Mono', monospace; }
+:root[data-theme='dark'] { --ink: #edf4ed; --muted: #a1aeaa; --line: #344340; --paper: #111a1b; --card: #1b2827; --cream: #172422; --navy: #0b1213; color: #edf4ed; background: #111a1b; color-scheme: dark; }
+* { box-sizing: border-box; } body { margin: 0; min-width: 320px; } button, input { font: inherit; } button { cursor: pointer; } a { color: inherit; text-decoration: none; }
+#root { min-height: 100vh; } h1, h2, h3, p { margin: 0; } h1, h2 { font-family: var(--display); font-weight: 600; letter-spacing: -.04em; } h1 em, h2 em { color: #71877d; font-style: normal; } p { color: var(--muted); line-height: 1.65; }

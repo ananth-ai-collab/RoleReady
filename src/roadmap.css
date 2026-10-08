@@ -1,0 +1,25 @@
+.role-toolkit-strip { display: grid; grid-template-columns: .85fr 1.15fr; gap: 18px; margin-top: 12px; padding: 18px; border: 1px solid var(--line); background: var(--cream); }
+.role-toolkit-strip p { font-size: 11px; }
+.technology-pills { display: flex; flex-wrap: wrap; gap: 6px; }
+.technology-pills span { padding: 5px 7px; border: 1px solid var(--line); color: var(--muted); background: var(--card); font: 9px var(--mono); }
+.technology-pills.compact { margin-bottom: 16px; }
+.stage-sub-label { margin-top: 18px; }
+.detail-note { display: block; color: var(--muted); font-size: 11px; line-height: 1.5; }
+.stage-project { margin-top: 19px; padding: 15px; border-left: 2px solid var(--mint); background: var(--cream); }
+.stage-project b { display: block; font-size: 13px; }
+.stage-project p { margin-top: 6px; font-size: 11px; }
+.stage-project .project-tags { margin-top: 10px; }
+.project-time { display: block; margin-top: 12px; color: var(--muted); font: 9px var(--mono); line-height: 1.5; }
+.career-progression { display: grid; grid-template-columns: .75fr 1.25fr; gap: 70px; padding-top: 90px; padding-bottom: 100px; border-top: 1px solid var(--line); }
+.career-progression h2 { margin-top: 15px; font-size: 38px; }
+.career-progression p { max-width: 320px; margin-top: 12px; font-size: 12px; }
+.career-path { display: flex; align-items: center; gap: 12px; align-self: center; padding: 19px; border: 1px solid var(--line); background: var(--card); }
+.career-step { display: grid; gap: 8px; min-width: 0; }
+.career-step span { color: #7fa093; font: 9px var(--mono); }
+.career-step b { font-size: 11px; line-height: 1.3; }
+.career-step svg { color: var(--mint); }
+.float-stages { top: -16px; right: 76px; transform: rotate(4deg); }
+.float-projects { bottom: 7px; left: 42px; transform: rotate(-4deg); }
+.stage-columns { grid-template-columns: 1fr 1fr 1.1fr; }
+.stage-resources { min-width: 0; }
+@media (max-width: 680px) { .role-toolkit-strip, .career-progression { grid-template-columns: 1fr; gap: 25px; }.career-progression { padding-top: 65px; padding-bottom: 75px; }.career-path { display: grid; grid-template-columns: 1fr; gap: 15px; }.career-step { grid-template-columns: 28px 1fr 18px; align-items: center; }.career-step span { grid-row: span 2; }.career-step svg { transform: rotate(90deg); }.stage-columns { grid-template-columns: 1fr; gap: 22px; }.stage-head { min-height: 82px; }.technology-pills span { min-height: 28px; display: inline-flex; align-items: center; }.float-stages { top: 17px; right: 28px; }.float-projects { bottom: 5px; left: 18px; } }
