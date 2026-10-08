@@ -688,7 +688,7 @@ function ResourceShowcase() {
     </section>
   );
 }
-function ProjectShowcase({ navigate }: { navigate: (v: View, slug?: string) => void }) {
+function ProjectShowcase({ navigate }: { navigate: (v: View, slug?: string, projectId?: string) => void }) {
   return (
     <section className="section project-showcase">
       <div className="section-heading">
@@ -750,7 +750,7 @@ function ProjectShowcase({ navigate }: { navigate: (v: View, slug?: string) => v
             <div className="project-card-body">
               <h3>{title}</h3>
               <p>{tags}</p>
-              <button className="project-card-footer project-card-link" onClick={() => navigate("role", roleSlug, projectId)} aria-label={`Open the ${title} project plan`}>
+            <button className="project-card-footer project-card-link" onClick={() => navigate("role", roleSlug, projectId)} aria-label={`Open the ${title} project plan`}>
                 <span>{level} project</span>
                 <ArrowUpRight size={16} />
               </button>
@@ -768,7 +768,7 @@ function Explore({
   query,
   setQuery,
 }: {
-  navigate: (v: View, slug?: string) => void;
+  navigate: (v: View, slug?: string, projectId?: string) => void;
   query: string;
   setQuery: (v: string) => void;
 }) {
@@ -900,14 +900,15 @@ function RolePage({
   focusProjectId,
 }: {
   role: Role;
-  navigate: (v: View, slug?: string) => void;
+  navigate: (v: View, slug?: string, projectId?: string) => void;
   focusProjectId: string | null;
 }) {
   const [expanded, setExpanded] = useState<number | null>(0);
-  const [expandedProject, setExpandedProject] = useState<string | null>(null);
+  const [expandedProject, setExpandedProject] = useState<string | null | undefined>(undefined);
+  const focusedProjectId = focusProjectId && role.projects.some((project) => project.id === focusProjectId) ? focusProjectId : null;
+  const activeExpandedProject = expandedProject === undefined ? focusedProjectId : expandedProject;
   useEffect(() => {
     if (!focusProjectId || !role.projects.some((project) => project.id === focusProjectId)) return;
-    setExpandedProject(focusProjectId);
     requestAnimationFrame(() => {
       document.getElementById(`project-${focusProjectId}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
     });
@@ -1124,7 +1125,7 @@ function RolePage({
         </h2>
         <div className="project-grid">
           {role.projects.map((project) => (
-            <div className={expandedProject === project.id ? "project-card project-expanded" : "project-card"} id={`project-${project.id}`} key={project.title}>
+            <div className={activeExpandedProject === project.id ? "project-card project-expanded" : "project-card"} id={`project-${project.id}`} key={project.title}>
               <div className="project-head">
                 <span>{project.level}</span>
                 <ArrowUpRight size={17} />
@@ -1139,8 +1140,8 @@ function RolePage({
                   <span key={tag}>{tag}</span>
                 ))}
               </div>
-              <button className="project-action" onClick={() => setExpandedProject(expandedProject === project.id ? null : project.id)}>{expandedProject === project.id ? "Hide project plan" : "Build this project"} <ArrowRight size={14} /></button>
-              {expandedProject === project.id && <div className="project-detail"><span className="detail-label">PROBLEM TO SOLVE</span><p>{project.problemStatement}</p><span className="detail-label stage-sub-label">FEATURES</span>{project.features.map((feature) => <span className="detail-item" key={feature}><Check size={13} /> {feature}</span>)}<span className="detail-label stage-sub-label">DELIVERABLES</span>{project.deliverables.map((deliverable) => <span className="detail-item" key={deliverable}><Check size={13} /> {deliverable}</span>)}</div>}
+              <button className="project-action" onClick={() => setExpandedProject(activeExpandedProject === project.id ? null : project.id)}>{activeExpandedProject === project.id ? "Hide project plan" : "Build this project"} <ArrowRight size={14} /></button>
+              {activeExpandedProject === project.id && <div className="project-detail"><span className="detail-label">PROBLEM TO SOLVE</span><p>{project.problemStatement}</p><span className="detail-label stage-sub-label">FEATURES</span>{project.features.map((feature) => <span className="detail-item" key={feature}><Check size={13} /> {feature}</span>)}<span className="detail-label stage-sub-label">DELIVERABLES</span>{project.deliverables.map((deliverable) => <span className="detail-item" key={deliverable}><Check size={13} /> {deliverable}</span>)}</div>}
             </div>
           ))}
         </div>
