@@ -29,4 +29,9 @@
 .project-detail { margin-top: 8px; padding-top: 14px; border-top: 1px solid var(--line); animation: reveal .2s ease-out; }
 .project-detail p { margin: 5px 0 12px; font-size: 11px; }
 .project-expanded { border-color: var(--mint); }
+.project-card-link { width: 100%; min-height: 42px; justify-content: space-between; border: 0; border-top: 1px solid var(--line); border-radius: 0; padding: 10px 0 0; text-align: left; cursor: pointer; appearance: none; background: transparent; }
+.project-card-link:hover { color: var(--ink); background: transparent; }
+.project-card-link svg { transition: transform .2s; }
+.project-card-link:hover svg { transform: translate(3px, -2px); }
+.project-card-link:focus-visible { outline: 3px solid color-mix(in srgb, var(--mint) 55%, transparent); outline-offset: 3px; }
 @media (max-width: 680px) { .role-toolkit-strip, .career-progression { grid-template-columns: 1fr; gap: 25px; }.career-progression { padding-top: 65px; padding-bottom: 75px; }.career-path { display: grid; grid-template-columns: 1fr; gap: 15px; }.career-step { grid-template-columns: 28px 1fr 18px; align-items: center; }.career-step span { grid-row: span 2; }.career-step svg { transform: rotate(90deg); }.stage-columns { grid-template-columns: 1fr; gap: 22px; }.stage-head { min-height: 82px; }.technology-pills span { min-height: 28px; display: inline-flex; align-items: center; }.float-stages { top: 17px; right: 28px; }.float-projects { bottom: 5px; left: 18px; } }

@@ -1,0 +1,81 @@
+:root {
+  --font-size-body: 18px;
+  --font-size-small: 15px;
+  --font-size-card: 21px;
+  --font-size-h3: 25px;
+  --font-size-h2: 36px;
+  --font-size-h1: clamp(52px, 6vw, 68px);
+  --leading-body: 1.68;
+  --leading-heading: 1.16;
+}
+
+body { font-size: var(--font-size-body); line-height: var(--leading-body); }
+.nav-links button, .nav-search, .icon-button { font-size: 15px; }
+.hero h1 { font-size: var(--font-size-h1); line-height: 1.08; }
+.hero-lede { font-size: 18px; line-height: 1.68; max-width: 62ch; }
+.hero-search label { font-size: 14px; }
+.search-wrap input { font-size: 16px; }
+.search-hints, .search-hints button { font-size: 13px; }
+.section-heading h2, .method-intro h2, .roadmap-copy h2 { font-size: var(--font-size-h2); line-height: var(--leading-heading); }
+.section-heading p, .method-intro p, .roadmap-copy p { font-size: 16px; line-height: 1.65; max-width: 70ch; }
+.role-card h3 { font-size: var(--font-size-card); line-height: 1.28; }
+.role-card p { font-size: 16px; line-height: 1.58; }
+.card-bottom { font-size: 13px; }
+.category-card b { font-size: 15px; }
+.category-card small { font-size: 13px; }
+.method-step h3 { font-size: 20px; }
+.method-step p { font-size: 16px; line-height: 1.6; }
+.large-step b { font-size: 16px; }
+.large-step small { font-size: 13px; }
+.resource-card h3, .project-card h3 { font-size: var(--font-size-card); line-height: 1.3; }
+.resource-card p, .project-card p { font-size: 15px; line-height: 1.6; }
+.resource-card > small, .project-card-footer { font-size: 13px; }
+.resource-link { font-size: 14px; }
+.page-intro h1, .about-hero h1, .role-hero h1 { font-size: clamp(44px, 5vw, 64px); line-height: 1.12; }
+.page-intro p, .about-hero p, .role-hero p { font-size: 17px; line-height: 1.68; max-width: 70ch; }
+.explore-count span, .difficulty, .filter, .filter-select { font-size: 13px; }
+.role-tags span { font-size: 13px; }
+.role-stats span { font-size: 13px; }
+.role-stats b { font-size: 28px; }
+.section-heading.compact h2, .roadmap-heading h2 { font-size: 32px; }
+.skill-card h3 { font-size: 18px; }
+.skill-item, .detail-item, .detail-note { font-size: 15px; line-height: 1.55; }
+.detail-label, .stage-kicker { font-size: 12px; }
+.stage-card h3 { font-size: 22px; }
+.stage-head p, .stage-project p { font-size: 15px; line-height: 1.6; }
+.stage-meta, .stage-meta span { font-size: 13px; }
+.resource-mini b { font-size: 14px; }
+.resource-mini span { font-size: 11px; }
+.projects-section h2 { font-size: 42px; }
+.project-time, .project-tags span { font-size: 13px; }
+.project-action { font-size: 14px; }
+.aside-card h3 { font-size: 28px; }
+.aside-card p { font-size: 15px; line-height: 1.6; }
+.portal-intro h2, .portal-flow h2, .portal-industries h2, .why-skills h2, .portal-bottom h2, .faq-section h2 { font-size: 34px; line-height: 1.16; }
+.portal-intro > div:first-child p, .analogy-card p, .industry-card p, .why-skill-card p, .career-progression p, .faq-list details p { font-size: 16px; line-height: 1.68; max-width: 70ch; }
+.flow-node b { font-size: 16px; }
+.industry-card b, .why-skill-card h3 { font-size: 19px; }
+.day-timeline b, .related-list button { font-size: 15px; }
+.faq-list summary { font-size: 16px; }
+.primary-button, .text-button, .complete-button { font-size: 15px; min-height: 44px; }
+
+@media (max-width: 680px) {
+  :root { --font-size-body: 16px; --font-size-card: 19px; --font-size-h2: 29px; }
+  body { font-size: 16px; line-height: 1.65; }
+  .nav-links button, .nav-search, .icon-button { font-size: 15px; }
+  .hero h1 { font-size: clamp(36px, 10vw, 42px); line-height: 1.1; }
+  .hero-lede { font-size: 16px; line-height: 1.65; }
+  .search-wrap input { font-size: 16px; }
+  .section-heading h2, .method-intro h2, .roadmap-copy h2 { font-size: 29px; }
+  .section-heading p, .method-intro p, .roadmap-copy p { font-size: 16px; }
+  .role-card h3 { font-size: 19px; }
+  .role-card p { font-size: 16px; }
+  .page-intro h1, .about-hero h1, .role-hero h1 { font-size: 34px; line-height: 1.12; }
+  .page-intro p, .about-hero p, .role-hero p { font-size: 16px; }
+  .stage-card h3 { font-size: 20px; }
+  .stage-head p, .stage-project p { font-size: 15px; }
+  .projects-section h2 { font-size: 36px; }
+  .resource-card h3, .project-card h3 { font-size: 19px; }
+  .resource-card p, .project-card p { font-size: 15px; }
+  .primary-button, .text-button, .complete-button { font-size: 15px; }
+}

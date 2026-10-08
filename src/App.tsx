@@ -27,6 +27,8 @@ import "./App.css";
 import "./roadmap.css";
 import "./matcher.css";
 import "./portal.css";
+import "./typography.css";
+import "./career-finder.css";
 import { PWAStatus } from "./PWAStatus";
 
 type View = "home" | "explore" | "about" | "role";
@@ -53,16 +55,19 @@ const roleSearchText = (role: Role) => [role.title, role.category, role.descript
 function App() {
   const [view, setView] = useState<View>("home");
   const [selectedSlug, setSelectedSlug] = useState("data-scientist");
+  const [focusProjectId, setFocusProjectId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [dark, setDark] = useState(() => localStorage.getItem("roleready-theme") !== "light");
   const [menu, setMenu] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [matcherOpen, setMatcherOpen] = useState(false);
-  const navigate = (next: View, slug?: string) => {
+  const navigate = (next: View, slug?: string, projectId?: string) => {
     setView(next);
     if (slug) setSelectedSlug(slug);
+    setFocusProjectId(projectId ?? null);
     setMenu(false);
     setPaletteOpen(false);
+    setMatcherOpen(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
   useEffect(() => {
@@ -156,7 +161,7 @@ function App() {
       {view === "explore" && (
         <Explore navigate={navigate} query={query} setQuery={setQuery} />
       )}{" "}
-      {view === "role" && <RolePage role={selected} navigate={navigate} />}{" "}
+      {view === "role" && <RolePage role={selected} navigate={navigate} focusProjectId={focusProjectId} />}{" "}
       {view === "about" && <About navigate={navigate} />}
       <Footer navigate={navigate} />
       <PWAStatus />
@@ -296,13 +301,14 @@ function Home({
               </button>
             </div>
           </div>
-          <button
-            className="primary-button hero-cta"
-            onClick={() => navigate("explore")}
-          >
-            Explore career roles <ArrowRight size={17} />
-          </button>
-          <button className="text-button hero-match-button" onClick={openMatcher}>Not sure what fits? Find my career path <ArrowRight size={15} /></button>
+          <div className="hero-actions">
+            <button className="primary-button" onClick={() => navigate("explore")}>
+              Explore Career Roles <ArrowRight size={17} />
+            </button>
+            <button className="secondary-button" onClick={openMatcher}>
+              Find My Career Path <ArrowRight size={17} />
+            </button>
+          </div>
         </div>
         <RoadmapPreview />
       </section>
@@ -355,7 +361,7 @@ function Home({
           {categoryLabels.map((category) => (
             <button
               key={category}
-              onClick={() => navigate("explore")}
+              onClick={() => { setQuery(category === "All" ? "" : category === "AI & Data" ? "Data & AI" : category); navigate("explore"); }}
               className={category === "All" ? "active" : ""}
             >
               {category === "Software Development"
@@ -412,7 +418,7 @@ function Home({
       </section>
       <RoadmapSection navigate={navigate} />
       <ResourceShowcase />
-      <ProjectShowcase />
+      <ProjectShowcase navigate={navigate} />
       <section className="cta-section">
         <div>
           <div className="eyebrow">YOUR NEXT CHAPTER</div>
@@ -614,13 +620,14 @@ function RoadmapSection({
   );
 }
 function ResourceShowcase() {
-  const resources: [string, string, string, string, typeof BookOpen][] = [
+  const resources: [string, string, string, string, typeof BookOpen, string][] = [
     [
       "Video",
       "Python for Beginners",
       "freeCodeCamp",
       "Start with the language that powers your analysis.",
       Code2,
+      "https://docs.python.org/3/tutorial/",
     ],
     [
       "Course",
@@ -628,6 +635,7 @@ function ResourceShowcase() {
       "freeCodeCamp",
       "Move from syntax into useful, practical analysis.",
       BookOpen,
+      "https://www.freecodecamp.org/learn/data-analysis-with-python/",
     ],
     [
       "Documentation",
@@ -635,6 +643,7 @@ function ResourceShowcase() {
       "Python.org",
       "Keep the source of truth close as you learn.",
       BookOpen,
+      "https://developer.mozilla.org/en-US/docs/Learn",
     ],
     [
       "Practice",
@@ -642,6 +651,7 @@ function ResourceShowcase() {
       "Exercism",
       "Build fluency through small, focused exercises.",
       Zap,
+      "https://exercism.org/tracks/python",
     ],
   ];
   return (
@@ -652,10 +662,10 @@ function ResourceShowcase() {
         copy="Every roadmap stage comes with carefully selected resources so you can spend less time searching and more time learning."
       />
       <div className="resource-grid">
-        {resources.map(([type, title, provider, copy, Icon]) => (
+        {resources.map(([type, title, provider, copy, Icon, url]) => (
           <a
             className={`resource-card resource-${type.toLowerCase()}`}
-            href="https://www.freecodecamp.org/learn/"
+            href={url}
             target="_blank"
             rel="noreferrer"
             key={type}
@@ -678,7 +688,7 @@ function ResourceShowcase() {
     </section>
   );
 }
-function ProjectShowcase() {
+function ProjectShowcase({ navigate }: { navigate: (v: View, slug?: string) => void }) {
   return (
     <section className="section project-showcase">
       <div className="section-heading">
@@ -700,20 +710,29 @@ function ProjectShowcase() {
             "Student Performance Analyzer",
             "Python · Pandas",
             "#bdebd8",
+            "data-analyst",
+            "Student Performance Analysis",
           ],
           [
             "Intermediate",
             "Customer Churn Prediction",
             "Python · scikit-learn",
             "#ffdc9f",
+            "data-scientist",
+            "Customer Churn Prediction",
           ],
           [
             "Advanced",
             "Recommendation System",
             "Python · ML · APIs",
             "#cdbff1",
+            "machine-learning-engineer",
+            "Recommendation Engine",
           ],
-        ].map(([level, title, tags, color]) => (
+        ].map(([level, title, tags, color, roleSlug, targetProject]) => {
+          const role = roles.find((item) => item.slug === roleSlug);
+          const projectId = role?.projects.find((project) => project.title === targetProject)?.id;
+          return (
           <div
             className="project-card"
             style={{ "--project-color": color } as React.CSSProperties}
@@ -731,13 +750,14 @@ function ProjectShowcase() {
             <div className="project-card-body">
               <h3>{title}</h3>
               <p>{tags}</p>
-              <div className="project-card-footer">
+              <button className="project-card-footer project-card-link" onClick={() => navigate("role", roleSlug, projectId)} aria-label={`Open the ${title} project plan`}>
                 <span>{level} project</span>
                 <ArrowUpRight size={16} />
-              </div>
+              </button>
             </div>
           </div>
-        ))}
+          );
+        })}
       </div>
     </section>
   );
@@ -877,12 +897,21 @@ function RoleEducation({ role, guide }: { role: Role; guide: RoleGuide }) {
 function RolePage({
   role,
   navigate,
+  focusProjectId,
 }: {
   role: Role;
   navigate: (v: View, slug?: string) => void;
+  focusProjectId: string | null;
 }) {
   const [expanded, setExpanded] = useState<number | null>(0);
   const [expandedProject, setExpandedProject] = useState<string | null>(null);
+  useEffect(() => {
+    if (!focusProjectId || !role.projects.some((project) => project.id === focusProjectId)) return;
+    setExpandedProject(focusProjectId);
+    requestAnimationFrame(() => {
+      document.getElementById(`project-${focusProjectId}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+  }, [focusProjectId, role]);
   const stats = [
     { value: role.stages.length, label: "stages" },
     {
@@ -1095,7 +1124,7 @@ function RolePage({
         </h2>
         <div className="project-grid">
           {role.projects.map((project) => (
-            <div className={expandedProject === project.id ? "project-card project-expanded" : "project-card"} key={project.title}>
+            <div className={expandedProject === project.id ? "project-card project-expanded" : "project-card"} id={`project-${project.id}`} key={project.title}>
               <div className="project-head">
                 <span>{project.level}</span>
                 <ArrowUpRight size={17} />
@@ -1233,20 +1262,25 @@ function About({ navigate }: { navigate: (v: View, slug?: string) => void }) {
 }
 function CareerMatcher({ close, navigate }: { close: () => void; navigate: (v: View, slug?: string) => void }) {
   const questions = [
-    { title: "What kind of work sounds most satisfying?", options: [["coding", "Building software"], ["data", "Data and mathematics"], ["security", "Investigating security"], ["design", "Designing experiences"], ["cloud", "Cloud and infrastructure"], ["product", "Business and product"]] },
-    { title: "How much do you enjoy mathematics?", options: [["low", "Low"], ["medium", "Medium"], ["high", "High"]] },
-    { title: "Which outcome sounds most like you?", options: [["build", "Ship products people use"], ["insight", "Explain what the data means"], ["protect", "Make systems safer"], ["operate", "Keep systems reliable"], ["shape", "Shape a product direction"]] },
-    { title: "What pace feels right?", options: [["practical", "Practical and hands-on"], ["deep", "Deep technical exploration"], ["creative", "Creative and iterative"]] },
-    { title: "What would you like to show in a portfolio?", options: [["app", "A working application"], ["analysis", "A clear analysis or model"], ["system", "A reliable technical system"], ["case", "A thoughtful product case study"]] },
+    { title: "What do you enjoy most?", options: [["coding", "Building things"], ["data", "Working with data"], ["security", "Solving technical problems"], ["design", "Designing things"], ["cloud", "Protecting or managing systems"], ["product", "Managing ideas and products"]] },
+    { title: "What kind of work sounds interesting?", options: [["coding", "Writing code"], ["data", "Finding patterns in data"], ["coding", "Creating websites or apps"], ["design", "Designing user experiences"], ["cloud", "Working with cloud infrastructure"], ["security", "Finding security problems"]] },
+    { title: "How do you feel about mathematics?", options: [["high", "I enjoy mathematics"], ["medium", "I'm okay with mathematics"], ["low", "I prefer less mathematics"]] },
+    { title: "What do you prefer?", options: [["coding", "Building"], ["data", "Analyzing"], ["design", "Designing"], ["security", "Securing"], ["product", "Managing"]] },
+    { title: "What sounds most interesting?", options: [["coding", "Creating software"], ["data", "Understanding data"], ["ai", "Building AI systems"], ["security", "Protecting computers and networks"], ["cloud", "Managing cloud systems"], ["design", "Designing products"]] },
   ] as const;
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<string[]>([]);
-  const finish = (answer: string) => { const next = [...answers, answer]; setAnswers(next); if (step < questions.length - 1) setStep(step + 1); };
-  const score = (role: Role) => nextScore(role, answers);
-  const matches = roles.slice().sort((a, b) => score(b) - score(a)).slice(0, 3);
-  return <div className="matcher-backdrop" onClick={close}><div className="matcher-modal" onClick={(event) => event.stopPropagation()}><button className="matcher-close" onClick={close} aria-label="Close career matcher"><X size={18} /></button>{step < questions.length ? <><div className="eyebrow">FIND MY CAREER PATH · 0{step + 1} / 0{questions.length}</div><div className="matcher-progress"><span style={{ width: `${((step + 1) / questions.length) * 100}%` }} /></div><h2>{questions[step].title}</h2><div className="matcher-options">{questions[step].options.map(([value, label]) => <button key={value} onClick={() => finish(value)}>{label}<ArrowRight size={16} /></button>)}</div></> : <><div className="eyebrow">YOUR TOP CAREER MATCHES</div><h2>Start with a direction.</h2><p className="matcher-intro">These matches are based on your answers and the shape of each existing RoleReady roadmap.</p><div className="match-list">{matches.map((role, index) => <div className="match-row" key={role.slug}><span className="match-rank">0{index + 1}</span><div><b>{role.title}</b><small>{role.category} · {role.estimatedTime}</small></div><button onClick={() => navigate("role", role.slug)}>Explore <ArrowRight size={14} /></button></div>)}</div><button className="text-button matcher-restart" onClick={() => { setStep(0); setAnswers([]) }}>Start again</button></>}</div></div>
+  const [started, setStarted] = useState(false);
+  const selectedAnswer = answers[step];
+  const choose = (answer: string) => setAnswers((current) => [...current.slice(0, step), answer]);
+  const next = () => { if (!selectedAnswer) return; setStep((current) => Math.min(current + 1, questions.length)); };
+  const back = () => setStep((current) => Math.max(current - 1, 0));
+  const restart = () => { setStep(0); setAnswers([]); setStarted(false); };
+  const matches = roles.slice().map((role) => ({ role, score: nextScore(role, answers) })).sort((a, b) => b.score - a.score).slice(0, 3);
+  const reasons = (role: Role) => { const reasonsForRole: string[] = []; if (answers.includes("data") && role.category === "Data & AI") reasonsForRole.push("You enjoy working with data"); if (answers.includes("coding") && role.category === "Software Development") reasonsForRole.push("You enjoy building things"); if (answers.includes("security") && role.category === "Cybersecurity") reasonsForRole.push("You are interested in protecting systems"); if (answers.includes("cloud") && role.category === "Cloud & DevOps") reasonsForRole.push("You are curious about infrastructure"); if (answers.includes("design") && role.category === "Design & Product") reasonsForRole.push("You enjoy designing experiences"); if (answers.includes("high") && role.category === "Data & AI") reasonsForRole.push("You enjoy mathematics"); return reasonsForRole.slice(0, 3).length ? reasonsForRole.slice(0, 3) : ["Your interests overlap with this career path", "You may enjoy the work style", "The roadmap is a useful direction to explore"]; };
+  return <div className="matcher-backdrop" onClick={close}><div className="matcher-modal matcher-flow" onClick={(event) => event.stopPropagation()}><button className="matcher-close" onClick={close} aria-label="Close career matcher"><X size={18} /></button>{!started ? <div className="matcher-start"><div className="matcher-compass"><Compass size={24} /></div><div className="eyebrow">CAREER DISCOVERY</div><h2>Find your career path.</h2><p>Not sure which career is right for you? Answer five simple questions and we’ll show you a few paths worth exploring.</p><button className="primary-button" onClick={() => setStarted(true)}>Start <ArrowRight size={17} /></button></div> : step < questions.length ? <><div className="matcher-step-label">Question {step + 1} of {questions.length}</div><div className="matcher-progress"><span style={{ width: `${((step + 1) / questions.length) * 100}%` }} /></div><h2>{questions[step].title}</h2><div className="matcher-options">{questions[step].options.map(([value, label]) => <button className={selectedAnswer === value ? "selected" : ""} key={`${value}-${label}`} onClick={() => choose(value)} aria-pressed={selectedAnswer === value}><span>{label}</span>{selectedAnswer === value ? <Check size={17} /> : <ArrowRight size={16} />}</button>)}</div><div className="matcher-nav">{step > 0 ? <button className="secondary-button" onClick={back}>← Back</button> : <span /> }<button className="primary-button" disabled={!selectedAnswer} onClick={next}>{step === questions.length - 1 ? "See My Career Matches" : "Next"} <ArrowRight size={16} /></button></div></> : <><div className="eyebrow">YOUR CAREER MATCHES</div><h2>Paths worth exploring.</h2><p className="matcher-intro">Based on your answers, these career paths may be worth exploring. Scores are questionnaire matches, not predictions.</p><div className="match-list">{matches.map(({ role, score }, index) => <div className="match-row result-row" key={role.slug}><span className="match-rank">0{index + 1}</span><div><b>{role.title}</b><small>Questionnaire match: {Math.min(98, Math.max(64, 62 + score * 2))}% · {role.category}</small><div className="match-reasons">{reasons(role).map((reason) => <span key={reason}><Check size={12} /> {reason}</span>)}</div></div><button onClick={() => navigate("role", role.slug)}>Explore Career <ArrowRight size={14} /></button></div>)}</div><div className="matcher-result-actions"><button className="secondary-button" onClick={restart}>Try Again</button><button className="primary-button" onClick={() => { close(); navigate("explore"); }}>Explore All Careers <ArrowRight size={15} /></button></div></>}</div></div>
 }
-function nextScore(role: Role, answers: string[]) { const categoryMap: Record<string, Category> = { coding: "Software Development", data: "Data & AI", security: "Cybersecurity", cloud: "Cloud & DevOps", design: "Design & Product", product: "Design & Product", build: "Software Development", insight: "Data & AI", protect: "Cybersecurity", operate: "Cloud & DevOps", shape: "Design & Product", app: "Software Development", analysis: "Data & AI", system: "Systems & Data", case: "Design & Product" }; return answers.reduce((total, answer) => total + (role.category === categoryMap[answer] ? 5 : 0) + (answer === "high" && role.category === "Data & AI" ? 3 : 0) + (answer === "deep" && role.difficulty === "Advanced" ? 2 : 0) + (answer === "creative" && role.category === "Design & Product" ? 3 : 0), 0) }
+function nextScore(role: Role, answers: string[]) { const categoryMap: Record<string, Category> = { coding: "Software Development", data: "Data & AI", ai: "Data & AI", security: "Cybersecurity", cloud: "Cloud & DevOps", design: "Design & Product", product: "Design & Product", build: "Software Development", insight: "Data & AI", protect: "Cybersecurity", operate: "Cloud & DevOps", shape: "Design & Product", app: "Software Development", analysis: "Data & AI", system: "Systems & Data", case: "Design & Product" }; return answers.reduce((total, answer) => total + (role.category === categoryMap[answer] ? 5 : 0) + (answer === "high" && role.category === "Data & AI" ? 3 : 0) + (answer === "ai" && ["AI Engineer", "Machine Learning Engineer", "MLOps Engineer"].includes(role.title) ? 4 : 0) + (answer === "deep" && role.difficulty === "Advanced" ? 2 : 0) + (answer === "creative" && role.category === "Design & Product" ? 3 : 0), 0) }
 function CommandPalette({
   close,
   navigate,
@@ -1259,11 +1293,7 @@ function CommandPalette({
   setQuery: (v: string) => void;
 }) {
   const matches = roles
-    .filter(
-      (role) =>
-        role.title.toLowerCase().includes(query.toLowerCase()) ||
-        role.category.toLowerCase().includes(query.toLowerCase()),
-    )
+    .filter((role) => roleSearchText(role).includes(query.toLowerCase()))
     .slice(0, 6);
   const popular = popularRoles.slice(0, 5);
   return (
