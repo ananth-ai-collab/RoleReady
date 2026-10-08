@@ -22,9 +22,12 @@ import {
   X,
   Zap,
 } from "lucide-react";
-import { popularRoles, roles, type Resource, type Role } from "./data";
+import { popularRoles, roles, type Category, type Resource, type Role } from "./data";
 import "./App.css";
 import "./roadmap.css";
+import "./matcher.css";
+import "./portal.css";
+import { PWAStatus } from "./PWAStatus";
 
 type View = "home" | "explore" | "about" | "role";
 const iconMap = {
@@ -45,14 +48,16 @@ const categoryLabels = [
   "Design & Product",
   "Testing",
 ];
+const roleSearchText = (role: Role) => [role.title, role.category, role.description, ...role.technologies, ...role.learningOrder, ...role.skills.flatMap((group) => group.items)].join(" ").toLowerCase();
 
 function App() {
   const [view, setView] = useState<View>("home");
   const [selectedSlug, setSelectedSlug] = useState("data-scientist");
   const [query, setQuery] = useState("");
-  const [dark, setDark] = useState(true);
+  const [dark, setDark] = useState(() => localStorage.getItem("roleready-theme") !== "light");
   const [menu, setMenu] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [matcherOpen, setMatcherOpen] = useState(false);
   const navigate = (next: View, slug?: string) => {
     setView(next);
     if (slug) setSelectedSlug(slug);
@@ -62,7 +67,13 @@ function App() {
   };
   useEffect(() => {
     document.documentElement.dataset.theme = dark ? "dark" : "light";
+    localStorage.setItem("roleready-theme", dark ? "dark" : "light");
   }, [dark]);
+  useEffect(() => {
+    const role = roles.find((item) => item.slug === selectedSlug);
+    document.title = view === "role" && role ? `${role.title} Roadmap — Skills, Resources & Projects | RoleReady` : view === "explore" ? "Explore Career Roles | RoleReady" : "RoleReady — Career Roadmaps for Students";
+    document.querySelector('meta[name="description"]')?.setAttribute("content", role && view === "role" ? `${role.title} skills, roadmap, resources, projects and career progression.` : "Discover the skills, learning roadmap, resources and projects needed to become job-ready.");
+  }, [selectedSlug, view]);
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
@@ -139,6 +150,7 @@ function App() {
           query={query}
           setQuery={setQuery}
           openPalette={() => setPaletteOpen(true)}
+          openMatcher={() => setMatcherOpen(true)}
         />
       )}{" "}
       {view === "explore" && (
@@ -147,6 +159,8 @@ function App() {
       {view === "role" && <RolePage role={selected} navigate={navigate} />}{" "}
       {view === "about" && <About navigate={navigate} />}
       <Footer navigate={navigate} />
+      <PWAStatus />
+      {matcherOpen && <CareerMatcher close={() => setMatcherOpen(false)} navigate={navigate} />}
       {paletteOpen && (
         <CommandPalette
           close={() => setPaletteOpen(false)}
@@ -172,11 +186,7 @@ function SearchBox({
 }) {
   const suggestions = query
     ? roles
-        .filter(
-          (role) =>
-            role.title.toLowerCase().includes(query.toLowerCase()) ||
-            role.category.toLowerCase().includes(query.toLowerCase()),
-        )
+        .filter((role) => roleSearchText(role).includes(query.toLowerCase()))
         .slice(0, 5)
     : [];
   return (
@@ -227,11 +237,13 @@ function Home({
   query,
   setQuery,
   openPalette,
+  openMatcher,
 }: {
   navigate: (v: View, slug?: string) => void;
   query: string;
   setQuery: (v: string) => void;
   openPalette: () => void;
+  openMatcher: () => void;
 }) {
   const featured = [
     "Data Scientist",
@@ -253,13 +265,15 @@ function Home({
             <span className="eyebrow-dot" /> Your career, mapped clearly
           </div>
           <h1>
-            Find the roadmap
+            Choose Your Role.
             <br />
-            to your <em>dream job.</em>
+            Follow the <em>Path.</em>
+            <br />
+            Build Your Career.
           </h1>
           <p className="hero-lede">
-            Choose a job role and discover exactly what to learn, where to learn
-            it, and what to build next.
+            RoleReady turns your career goal into a structured roadmap of skills,
+            resources, and real-world projects.
           </p>
           <div className="hero-search">
             <label>What role are you interested in?</label>
@@ -286,8 +300,9 @@ function Home({
             className="primary-button hero-cta"
             onClick={() => navigate("explore")}
           >
-            Explore roadmaps <ArrowRight size={17} />
+            Explore career roles <ArrowRight size={17} />
           </button>
+          <button className="text-button hero-match-button" onClick={openMatcher}>Not sure what fits? Find my career path <ArrowRight size={15} /></button>
         </div>
         <RoadmapPreview />
       </section>
@@ -347,7 +362,7 @@ function Home({
                 ? "Software"
                 : category === "Design & Product"
                   ? "Design"
-                  : category}
+                  : category} <small>{category === "All" ? roles.length : roles.filter((role) => role.category === category).length}</small>
             </button>
           ))}
         </div>
@@ -444,9 +459,6 @@ function RoadmapPreview() {
           <span className="preview-status">
             <Check size={12} /> In demand
           </span>
-        </div>
-        <div className="preview-progress">
-          <span style={{ width: "38%" }} />
         </div>
         <div className="preview-body">
           <span className="preview-axis" />
@@ -578,9 +590,6 @@ function RoadmapSection({
               <span className="eyebrow">DATA & AI</span>
               <h3>Data Scientist</h3>
             </div>
-            <span className="completion-pill">
-              <span /> 0% started
-            </span>
           </div>
           {steps.map((step, index) => (
             <div className="large-step" key={step}>
@@ -744,14 +753,19 @@ function Explore({
   setQuery: (v: string) => void;
 }) {
   const [category, setCategory] = useState("All");
+  const [difficulty, setDifficulty] = useState("All");
+  const [learningTime, setLearningTime] = useState("All");
+  const [compareSlugs, setCompareSlugs] = useState<string[]>([]);
   const filtered = useMemo(
     () =>
       roles.filter(
         (role) =>
           (category === "All" || role.category === category) &&
-          role.title.toLowerCase().includes(query.toLowerCase()),
+          (difficulty === "All" || role.difficulty === difficulty) &&
+          (learningTime === "All" || (learningTime === "short" ? !role.estimatedTime.includes("8–12") && !role.estimatedTime.includes("10–14") : learningTime === "mid" ? role.estimatedTime.includes("6–9") || role.estimatedTime.includes("8–12") : role.estimatedTime.includes("10–14") || role.estimatedTime.includes("12"))) &&
+          roleSearchText(role).includes(query.toLowerCase()),
       ),
-    [category, query],
+    [category, difficulty, learningTime, query],
   );
   return (
     <main className="explore-page section">
@@ -788,12 +802,28 @@ function Explore({
                   : item}
             </button>
           ))}
+          <select className="filter-select" value={difficulty} onChange={(event) => setDifficulty(event.target.value)} aria-label="Filter by difficulty">
+            <option value="All">All levels</option>
+            <option value="Beginner">Beginner</option>
+            <option value="Intermediate">Intermediate</option>
+            <option value="Advanced">Advanced</option>
+          </select>
+          <select className="filter-select" value={learningTime} onChange={(event) => setLearningTime(event.target.value)} aria-label="Filter by learning time">
+            <option value="All">Any duration</option>
+            <option value="short">Under 6 months</option>
+            <option value="mid">6–12 months</option>
+            <option value="long">12+ months</option>
+          </select>
         </div>
       </div>
+      {compareSlugs.length > 0 && <RoleComparison roles={roles.filter((role) => compareSlugs.includes(role.slug))} onRemove={(slug) => setCompareSlugs((current) => current.filter((item) => item !== slug))} />}
       {filtered.length ? (
         <div className="role-grid explore-grid">
           {filtered.map((role) => (
-            <RoleCard key={role.slug} role={role} navigate={navigate} />
+            <div className="explore-card-wrap" key={role.slug}>
+              <RoleCard role={role} navigate={navigate} />
+              <button className={compareSlugs.includes(role.slug) ? "compare-toggle active" : "compare-toggle"} onClick={() => setCompareSlugs((current) => current.includes(role.slug) ? current.filter((item) => item !== role.slug) : current.length < 3 ? [...current, role.slug] : current)}>{compareSlugs.includes(role.slug) ? "Comparing" : "Compare"}</button>
+            </div>
           ))}
         </div>
       ) : (
@@ -806,6 +836,8 @@ function Explore({
             onClick={() => {
               setQuery("");
               setCategory("All");
+              setDifficulty("All");
+              setLearningTime("All");
             }}
           >
             Browse all roles
@@ -816,6 +848,32 @@ function Explore({
   );
 }
 
+function RoleComparison({ roles: selectedRoles, onRemove }: { roles: Role[]; onRemove: (slug: string) => void }) {
+  return <section className="comparison-panel"><div className="comparison-heading"><div><div className="eyebrow">ROLE COMPARISON</div><h2>See the tradeoffs clearly.</h2></div><span>{selectedRoles.length} / 3 selected</span></div><div className="comparison-grid"><div className="comparison-labels"><span>Role</span><span>Difficulty</span><span>Learning time</span><span>Stages</span><span>Core tools</span></div>{selectedRoles.map((role) => <div className="comparison-column" key={role.slug}><button onClick={() => onRemove(role.slug)} aria-label={`Remove ${role.title}`}><X size={14} /></button><b>{role.title}</b><span>{role.difficulty}</span><span>{role.estimatedTime}</span><span>{role.stages.length} stages</span><span>{role.technologies.slice(0, 3).join(" · ")}</span></div>)}</div></section>
+}
+
+type RoleGuide = { overview: string; analogy: string; workflow: string[]; industries: { name: string; example: string }[]; day: string[]; faq: { question: string; answer: string }[]; related: Role[] }
+function roleGuide(role: Role): RoleGuide {
+  const guides: Record<Category, { overview: string; analogy: string; workflow: string[]; industries: string[]; day: string[] }> = {
+    "Software Development": { overview: "A software developer turns a problem into a working digital product. They write code, test it, fix issues, and work with other people to improve the result.", analogy: "Think of a developer as an architect and builder for digital tools: they understand the plan, choose the right materials, and make sure the building works.", workflow: ["Understand the problem", "Plan a small solution", "Write and test code", "Review and improve", "Ship the result"], industries: ["Technology", "Banking", "Healthcare", "Education"], day: ["Team stand-up", "Build a feature", "Review code", "Test and fix bugs", "Document the change"] },
+    "Data & AI": { overview: "This career uses information to answer questions, discover patterns, or build intelligent features. The work usually combines careful thinking, technical tools, and clear communication.", analogy: "Imagine having a huge box of clues. This professional sorts the clues, finds the important patterns, and explains what they mean.", workflow: ["Understand the question", "Collect useful information", "Clean and explore it", "Find patterns or build a model", "Explain the result"], industries: ["E-commerce", "Banking", "Healthcare", "Transportation"], day: ["Check the question", "Work with data", "Test an idea", "Explain findings", "Document decisions"] },
+    Cybersecurity: { overview: "A security professional helps people and organizations keep systems, accounts, and information safe. They look for weaknesses, investigate unusual activity, and improve defenses.", analogy: "Like a security team for a digital building, they understand who should enter, watch for unusual behavior, and improve the locks and alarms.", workflow: ["Understand what must be protected", "Watch for unusual activity", "Investigate evidence", "Reduce the risk", "Record and improve the defense"], industries: ["Technology", "Government", "Banking", "Healthcare"], day: ["Review alerts", "Investigate evidence", "Check a control", "Discuss a risk", "Write a security report"] },
+    "Cloud & DevOps": { overview: "Cloud and operations professionals make sure software can run reliably for real users. They automate deployments, manage infrastructure, and prepare for failures.", analogy: "If software is a shop, this person runs the roads, electricity, storage, and emergency plans that keep the shop open.", workflow: ["Understand the service", "Design the environment", "Automate delivery", "Monitor behavior", "Recover and improve"], industries: ["Technology", "Media", "Retail", "Financial services"], day: ["Check service health", "Improve a deployment", "Review infrastructure", "Handle an alert", "Update a runbook"] },
+    "Systems & Data": { overview: "Systems and data professionals keep the technical foundations dependable. They manage networks, servers, databases, and the information moving through them.", analogy: "They are the people who keep the invisible machinery behind digital services organized, available, and understandable.", workflow: ["Understand the environment", "Configure the system", "Monitor its behavior", "Troubleshoot a problem", "Automate and document"], industries: ["Technology", "Manufacturing", "Government", "Education"], day: ["Check systems", "Investigate a request", "Change configuration", "Test recovery", "Document the fix"] },
+    "Design & Product": { overview: "Design and product professionals help teams decide what to build and how it should work for people. They learn about users, shape ideas, and communicate decisions.", analogy: "They are translators between people and technology: they turn a human need into a product that is clear and useful.", workflow: ["Understand people", "Frame the problem", "Explore possible solutions", "Test an idea", "Improve and deliver"], industries: ["Technology", "Healthcare", "Education", "Consumer products"], day: ["Review user evidence", "Sketch an idea", "Discuss tradeoffs", "Test a prototype", "Plan the next decision"] },
+    Testing: { overview: "Testing professionals create confidence that software works as expected. They explore how a product behaves, report useful problems, and help teams prevent regressions.", analogy: "They are quality investigators: they ask what could go wrong before a real user has to discover it.", workflow: ["Understand the expected behavior", "Design useful checks", "Try the product", "Report evidence", "Verify the fix"], industries: ["Technology", "Banking", "Healthcare", "E-commerce"], day: ["Review a feature", "Run test scenarios", "Investigate a bug", "Discuss risk", "Verify a release"] },
+  }
+  const base = guides[role.category]
+  const roleSpecific: Record<string, string> = { "Data Analyst": "A Data Analyst focuses on answering practical business questions with reports, queries, and dashboards.", "Data Scientist": "A Data Scientist studies patterns in data and builds models that help people make better predictions or decisions.", "Data Engineer": "A Data Engineer builds the pipelines and platforms that move trustworthy data to the people who need it.", "Machine Learning Engineer": "A Machine Learning Engineer turns models into reliable software that can work for real users.", "AI Engineer": "An AI Engineer builds useful AI features and connects models to products, data, and people.", "Product Manager": "A Product Manager helps a team choose the right problem, define the outcome, and decide what to build next." }
+  const overview = roleSpecific[role.title] ?? `${role.title} professionals ${base.overview.charAt(0).toLowerCase()}${base.overview.slice(1)}`
+  const related = roles.filter((candidate) => candidate.slug !== role.slug && candidate.category === role.category).slice(0, 4)
+  return { overview, analogy: base.analogy, workflow: base.workflow, industries: base.industries.map((name) => ({ name, example: `Use ${role.title.toLowerCase()} skills to solve a real problem in ${name.toLowerCase()}.` })), day: base.day, related, faq: [{ question: "Can a beginner learn this career?", answer: "Yes, but the starting point depends on the role. Begin with the first roadmap stage and build small examples before moving forward." }, { question: "What should I learn first?", answer: `Start with ${role.learningOrder[0]}. It gives you the foundation for the next stage instead of asking you to learn everything at once.` }, { question: "Do I need a degree?", answer: "Requirements vary by country, employer, and role. A degree can be useful, but a clear portfolio and demonstrated skills can also help show what you can do." }, { question: "How long does it take?", answer: `RoleReady estimates ${role.estimatedTime} for the fundamentals and portfolio work. Your pace, background, and practice time will change that estimate.` }] }
+}
+
+function RoleEducation({ role, guide }: { role: Role; guide: RoleGuide }) {
+  return <div className="role-education section"><section className="portal-intro"><div><div className="eyebrow">START WITH THE BIG PICTURE</div><h2>What is a {role.title}?</h2><p>{guide.overview}</p></div><div className="analogy-card"><span className="detail-label">A SIMPLE WAY TO THINK ABOUT IT</span><p>{guide.analogy}</p></div></section><section className="portal-flow"><div className="eyebrow">WHAT THIS PERSON ACTUALLY DOES</div><h2>From question to useful result.</h2><div className="flow-track">{guide.workflow.map((step, index) => <div className="flow-node" key={step}><span>0{index + 1}</span><b>{step}</b>{index < guide.workflow.length - 1 && <ArrowRight size={16} />}</div>)}</div></section><section className="portal-industries"><div className="section-heading compact"><div><div className="eyebrow">WHERE IT IS USED</div><h2>Real-world settings.</h2><p>The same career can look different across industries.</p></div></div><div className="industry-grid">{guide.industries.map((industry) => <div className="industry-card" key={industry.name}><b>{industry.name}</b><p>{industry.example}</p></div>)}</div></section><section className="why-skills"><div className="section-heading compact"><div><div className="eyebrow">WHY THESE SKILLS MATTER</div><h2>Learn the reason, not just the name.</h2><p>Every tool on the roadmap exists to help solve a real part of the job.</p></div></div><div className="why-skill-grid">{role.skills.slice(0, 3).map((group) => <div className="why-skill-card" key={group.group}><span className="skill-number">{group.group}</span><h3>{group.items[0]}</h3><p><b>WHAT:</b> A core part of the {group.group.toLowerCase()} toolkit.</p><p><b>WHY:</b> It helps a {role.title.toLowerCase()} make reliable decisions and explain their work.</p><p><b>WHERE:</b> You will practice it in the {role.learningOrder[0].toLowerCase()} and project stages.</p></div>)}</div></section></div>
+}
+
 function RolePage({
   role,
   navigate,
@@ -823,19 +881,8 @@ function RolePage({
   role: Role;
   navigate: (v: View, slug?: string) => void;
 }) {
-  const key = `progress-${role.slug}`;
-  const [completed, setCompleted] = useState<number[]>(() =>
-    JSON.parse(localStorage.getItem(key) || "[]"),
-  );
   const [expanded, setExpanded] = useState<number | null>(0);
-  const toggle = (index: number) =>
-    setCompleted((current) => {
-      const next = current.includes(index)
-        ? current.filter((item) => item !== index)
-        : [...current, index];
-      localStorage.setItem(key, JSON.stringify(next));
-      return next;
-    });
+  const [expandedProject, setExpandedProject] = useState<string | null>(null);
   const stats = [
     { value: role.stages.length, label: "stages" },
     {
@@ -865,7 +912,7 @@ function RolePage({
             <div className="role-tags">
               <span>{role.difficulty}</span>
               <span>
-                <Clock3 size={14} /> 16–20 weeks
+                <Clock3 size={14} /> {role.estimatedTime}
               </span>
               <span>
                 <BookOpen size={14} /> Structured path
@@ -892,6 +939,7 @@ function RolePage({
             <div>
               <div className="eyebrow">WHAT YOU’LL NEED</div>
               <h2>The toolkit, not the noise.</h2>
+        <RoleEducation role={role} guide={roleGuide(role)} />
               <p>Build a balanced foundation across these three areas.</p>
             </div>
           </div>
@@ -932,43 +980,15 @@ function RolePage({
                 to do next.
               </p>
             </div>
-            <div className="progress-box">
-              <div>
-                <span>Your progress</span>
-                <b>
-                  {Math.round((completed.length / role.stages.length) * 100)}%
-                </b>
-              </div>
-              <div className="progress-track">
-                <span
-                  style={{
-                    width: `${(completed.length / role.stages.length) * 100}%`,
-                  }}
-                />
-              </div>
-              <small>
-                {completed.length} of {role.stages.length} stages complete
-              </small>
-            </div>
           </div>
           <div className="timeline">
             {role.stages.map((stage, index) => (
               <div
-                className={
-                  completed.includes(index)
-                    ? "timeline-item complete"
-                    : "timeline-item"
-                }
+                className="timeline-item"
                 key={stage.title}
               >
                 <div className="timeline-marker">
-                  <span>
-                    {completed.includes(index) ? (
-                      <Check size={16} />
-                    ) : (
-                      `0${index + 1}`
-                    )}
-                  </span>
+                  <span>{`0${index + 1}`}</span>
                 </div>
                 <div className="stage-card">
                   <button
@@ -1048,17 +1068,6 @@ function RolePage({
                       )}
                     </div>
                   )}
-                  <div className="stage-actions">
-                    <button
-                      className="complete-button"
-                      onClick={() => toggle(index)}
-                    >
-                      {completed.includes(index)
-                        ? "Completed"
-                        : "Mark stage complete"}
-                      {completed.includes(index) && <Check size={14} />}
-                    </button>
-                  </div>
                 </div>
               </div>
             ))}
@@ -1086,7 +1095,7 @@ function RolePage({
         </h2>
         <div className="project-grid">
           {role.projects.map((project) => (
-            <div className="project-card" key={project.title}>
+            <div className={expandedProject === project.id ? "project-card project-expanded" : "project-card"} key={project.title}>
               <div className="project-head">
                 <span>{project.level}</span>
                 <ArrowUpRight size={17} />
@@ -1101,6 +1110,8 @@ function RolePage({
                   <span key={tag}>{tag}</span>
                 ))}
               </div>
+              <button className="project-action" onClick={() => setExpandedProject(expandedProject === project.id ? null : project.id)}>{expandedProject === project.id ? "Hide project plan" : "Build this project"} <ArrowRight size={14} /></button>
+              {expandedProject === project.id && <div className="project-detail"><span className="detail-label">PROBLEM TO SOLVE</span><p>{project.problemStatement}</p><span className="detail-label stage-sub-label">FEATURES</span>{project.features.map((feature) => <span className="detail-item" key={feature}><Check size={13} /> {feature}</span>)}<span className="detail-label stage-sub-label">DELIVERABLES</span>{project.deliverables.map((deliverable) => <span className="detail-item" key={deliverable}><Check size={13} /> {deliverable}</span>)}</div>}
             </div>
           ))}
         </div>
@@ -1123,6 +1134,23 @@ function RolePage({
             </div>
           ))}
         </div>
+      </section>
+      <section className="portal-bottom section">
+        <div className="day-life">
+          <div className="eyebrow">A DAY IN THE LIFE</div>
+          <h2>What the work can look like.</h2>
+          <div className="day-timeline">{roleGuide(role).day.map((item, index) => <div key={item}><span>{9 + index}:00</span><b>{item}</b></div>)}</div>
+        </div>
+        <div className="related-careers">
+          <div className="eyebrow">IF THIS SOUNDS INTERESTING</div>
+          <h2>Explore related careers.</h2>
+          <div className="related-list">{roleGuide(role).related.map((related) => <button key={related.slug} onClick={() => navigate("role", related.slug)}><span>{related.title}</span><ArrowRight size={15} /></button>)}</div>
+        </div>
+      </section>
+      <section className="faq-section section">
+        <div className="eyebrow">BEGINNER QUESTIONS</div>
+        <h2>Before you choose a direction.</h2>
+        <div className="faq-list">{roleGuide(role).faq.map((item) => <details key={item.question}><summary>{item.question}<ChevronDown size={16} /></summary><p>{item.answer}</p></details>)}</div>
       </section>
     </main>
   );
@@ -1203,6 +1231,22 @@ function About({ navigate }: { navigate: (v: View, slug?: string) => void }) {
     </main>
   );
 }
+function CareerMatcher({ close, navigate }: { close: () => void; navigate: (v: View, slug?: string) => void }) {
+  const questions = [
+    { title: "What kind of work sounds most satisfying?", options: [["coding", "Building software"], ["data", "Data and mathematics"], ["security", "Investigating security"], ["design", "Designing experiences"], ["cloud", "Cloud and infrastructure"], ["product", "Business and product"]] },
+    { title: "How much do you enjoy mathematics?", options: [["low", "Low"], ["medium", "Medium"], ["high", "High"]] },
+    { title: "Which outcome sounds most like you?", options: [["build", "Ship products people use"], ["insight", "Explain what the data means"], ["protect", "Make systems safer"], ["operate", "Keep systems reliable"], ["shape", "Shape a product direction"]] },
+    { title: "What pace feels right?", options: [["practical", "Practical and hands-on"], ["deep", "Deep technical exploration"], ["creative", "Creative and iterative"]] },
+    { title: "What would you like to show in a portfolio?", options: [["app", "A working application"], ["analysis", "A clear analysis or model"], ["system", "A reliable technical system"], ["case", "A thoughtful product case study"]] },
+  ] as const;
+  const [step, setStep] = useState(0);
+  const [answers, setAnswers] = useState<string[]>([]);
+  const finish = (answer: string) => { const next = [...answers, answer]; setAnswers(next); if (step < questions.length - 1) setStep(step + 1); };
+  const score = (role: Role) => nextScore(role, answers);
+  const matches = roles.slice().sort((a, b) => score(b) - score(a)).slice(0, 3);
+  return <div className="matcher-backdrop" onClick={close}><div className="matcher-modal" onClick={(event) => event.stopPropagation()}><button className="matcher-close" onClick={close} aria-label="Close career matcher"><X size={18} /></button>{step < questions.length ? <><div className="eyebrow">FIND MY CAREER PATH · 0{step + 1} / 0{questions.length}</div><div className="matcher-progress"><span style={{ width: `${((step + 1) / questions.length) * 100}%` }} /></div><h2>{questions[step].title}</h2><div className="matcher-options">{questions[step].options.map(([value, label]) => <button key={value} onClick={() => finish(value)}>{label}<ArrowRight size={16} /></button>)}</div></> : <><div className="eyebrow">YOUR TOP CAREER MATCHES</div><h2>Start with a direction.</h2><p className="matcher-intro">These matches are based on your answers and the shape of each existing RoleReady roadmap.</p><div className="match-list">{matches.map((role, index) => <div className="match-row" key={role.slug}><span className="match-rank">0{index + 1}</span><div><b>{role.title}</b><small>{role.category} · {role.estimatedTime}</small></div><button onClick={() => navigate("role", role.slug)}>Explore <ArrowRight size={14} /></button></div>)}</div><button className="text-button matcher-restart" onClick={() => { setStep(0); setAnswers([]) }}>Start again</button></>}</div></div>
+}
+function nextScore(role: Role, answers: string[]) { const categoryMap: Record<string, Category> = { coding: "Software Development", data: "Data & AI", security: "Cybersecurity", cloud: "Cloud & DevOps", design: "Design & Product", product: "Design & Product", build: "Software Development", insight: "Data & AI", protect: "Cybersecurity", operate: "Cloud & DevOps", shape: "Design & Product", app: "Software Development", analysis: "Data & AI", system: "Systems & Data", case: "Design & Product" }; return answers.reduce((total, answer) => total + (role.category === categoryMap[answer] ? 5 : 0) + (answer === "high" && role.category === "Data & AI" ? 3 : 0) + (answer === "deep" && role.difficulty === "Advanced" ? 2 : 0) + (answer === "creative" && role.category === "Design & Product" ? 3 : 0), 0) }
 function CommandPalette({
   close,
   navigate,
